@@ -26,7 +26,7 @@ function normalize(cmd, args) {
 		return el
 	})
 
-	return `${cmd} ${prettyArgs.join(',')}`
+	return `${cmd} ${prettyArgs.join(', ')}`.toUpperCase()
 }
 
 lines.forEach(line => {
@@ -38,12 +38,12 @@ lines.forEach(line => {
 
 	if (args[0] === '') args.shift()
 
-	console.log(printf('%10s: %s', 'mnemonic', line))
-	console.log(printf("%10s: %s", 'command', cmd))
-	console.log(printf("%10s: %s", 'arg1', args[0]))
-	console.log(printf("%10s: %s", 'arg2', args[1]))
+	//console.log(printf('%10s: %s', 'mnemonic', line))
+	//console.log(printf("%10s: %s", 'command', cmd))
+	//console.log(printf("%10s: %s", 'arg1', args[0]))
+	//console.log(printf("%10s: %s", 'arg2', args[1]))
 
 	console.log(printf("%10s: %s", 'pretty', normalize(cmd, args)))
 
-	console.log('-----------')
+	//console.log('-----------')
 })
