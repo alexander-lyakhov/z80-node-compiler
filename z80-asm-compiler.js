@@ -5,33 +5,35 @@ const context = fs.readFileSync('ldir.asm', 'utf8')
 const codes = fs.readFileSync('z80-asm-commands.json', 'utf8')
 //console.log(codes)
 
-function normalize(cmd, args) {
+const isNumber = (val) => !isNaN(val)
 
-  let extra;
+function prettify(path, param) {
 
-  if (args.length > 2) {
-    extra = args.pop()
+  if (!path.length && !param) {
+    return ''
   }
 
-  const prettyArgs = args.map(el => {
+  const cmd = path.shift()
+
+  const tail = path.map(el => {
     //-----------------------------------------------------
     // replace expression '(addr)' with address value
     //-----------------------------------------------------
     if (/addr/.test(el)) {
-      return el.replace(/addr/, extra)
+      return el.replace(/addr/, param)
     }
 
     //-----------------------------------------------------
     // replace expression like '(ix + n)' with offset value
     //-----------------------------------------------------
     if (/\bn/.test(el)) {
-      return el.replace(/\bn/, extra)
+      return el.replace(/\bn/, param)
     }
 
     return el
   })
 
-  return `${cmd} ${prettyArgs.join(', ')}`//.toUpperCase()
+  return `${cmd} ${tail.join(', ')}`//.toUpperCase()
 }
 
 function getCmdCode(cmd) {
@@ -51,16 +53,23 @@ lines.forEach(line => {
   //console.log(line)
 
   const [cmd, ...rest] = line.split(/\s/)
-  const tail = rest.join('')
-  let args = tail.split(',')
+  const parts = [cmd, ...rest.join('').split(',')]
 
-  //-----------------------------------------------------------------------------------------------------
-  // Got args array with only one element [''] if line contains empty string or command has no parameters
-  // In this case args array needs to be cleared
-  //-----------------------------------------------------------------------------------------------------
-  if (args[0] === '') {
-    args = []
+  const path = []
+  const params = []
+
+  while(parts[0]) {
+    let el = parts.shift()
+
+    if (el !== '') {
+      isNumber(el)
+        ? params.push(el) // params may contain always only 1 element
+        : path.push(el)
+    }
+
   }
+
+  //console.log(path, params)
 
   //console.log(printf('%10s: %s', 'mnemonic', line))
   //console.log(printf("%10s: %s", 'command', cmd))
@@ -69,8 +78,9 @@ lines.forEach(line => {
 
   //console.log(cmd, args)
 
-  console.log(printf(" %-24s |", `${cmd}, ${args.join(', ')}`))
-  console.log(printf(" %-24s |", normalize(cmd, args)))
+  //console.log(printf(" %-24s |", `${cmd}, ${args.join(', ')}`))
+  //console.log(printf(" %-24s |", prettify(cmd, params)))
+  console.log(printf(" %-24s | %s", prettify(path, params[0]), params.join(', ')))
 
   //console.log('-----------')
 })
