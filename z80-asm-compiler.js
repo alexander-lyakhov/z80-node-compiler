@@ -3,31 +3,31 @@ const printf = require('printf')
 
 const context = fs.readFileSync('ldir.asm', 'utf8')
 const codes = fs.readFileSync('z80-asm-commands.json', 'utf8')
-//console.log(codes)
 
 const isNumber = (val) => !isNaN(val)
 
-function prettify(path, param) {
+const addrRegexp = /\baddr\b/
+const offsetRegexp = /(\boffset\b)|(\bd\b)/ // searching for 'offset' or 'd'
 
-  if (!path.length && !param) {
+function prettify(cmd, params, data) {
+
+  if (!cmd && !params.length) {
     return ''
   }
 
-  const cmd = path.shift()
-
-  const tail = path.map(el => {
+  const tail = params.map(el => {
     //-----------------------------------------------------
     // replace expression '(addr)' with address value
     //-----------------------------------------------------
-    if (/addr/.test(el)) {
-      return el.replace(/addr/, param)
+    if (addrRegexp.test(el)) {
+      return el.replace(addrRegexp, data)
     }
 
     //-----------------------------------------------------
-    // replace expression like '(ix + n)' with offset value
+    // replace expression like '(ix + d)' with offset value
     //-----------------------------------------------------
-    if (/\bn/.test(el)) {
-      return el.replace(/\bn/, param)
+    if (offsetRegexp.test(el)) {
+      return el.replace(offsetRegexp, data)
     }
 
     return el
@@ -36,7 +36,7 @@ function prettify(path, param) {
   return `${cmd} ${tail.join(', ')}`//.toUpperCase()
 }
 
-function getCmdCode(cmd) {
+function getCmdCode(path) {
   while(cmd) {
     if (typeof(cmd) !== 'object') {
       return cmd
@@ -53,34 +53,20 @@ lines.forEach(line => {
   //console.log(line)
 
   const [cmd, ...rest] = line.split(/\s/)
-  const parts = [cmd, ...rest.join('').split(',')]
+  const params = rest.join('').split(',').reverse()
+  let data = null
 
-  const path = []
-  const params = []
-
-  while(parts[0]) {
-    let el = parts.shift()
-
-    if (el !== '') {
-      isNumber(el)
-        ? params.push(el) // params may contain always only 1 element
-        : path.push(el)
-    }
-
+  if (isNumber(params[0])) {
+    data = params.reverse().pop()
   }
 
-  //console.log(path, params)
+  //console.log(cmd, params, data)
 
-  //console.log(printf('%10s: %s', 'mnemonic', line))
-  //console.log(printf("%10s: %s", 'command', cmd))
-  //console.log(printf("%10s: %s", 'arg1', args[0]))
-  //console.log(printf("%10s: %s", 'arg2', args[1]))
-
-  //console.log(cmd, args)
-
-  //console.log(printf(" %-24s |", `${cmd}, ${args.join(', ')}`))
-  //console.log(printf(" %-24s |", prettify(cmd, params)))
-  console.log(printf(" %-24s | %s", prettify(path, params[0]), params.join(', ')))
-
-  //console.log('-----------')
+  console.log(
+    printf(" %-24s | %-10s | %s",
+      prettify(cmd, params, data),
+      data ? data:'',
+      line
+    )
+  )
 })
