@@ -13,7 +13,6 @@ ld a, h
 ld a, i
 ld a, l
 
-
 ld hl, 30000
 ld de, 16384
 ld bc, 6912
