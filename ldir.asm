@@ -1,9 +1,9 @@
-ld a, (addr), 30000
+ld a, (addr), 23606
 ld a, (bc)
 ld a, (de)
 ld a, (hl)
-ld a, (ix+offset),  5
-ld a, (iy+offset),  5
+ld a, (ix+5)
+ld a, (iy+5)
 ld a, a
 ld a, b
 ld a, c
@@ -19,8 +19,9 @@ ld bc, 6912
 ld a, (hl)
 ld (hl), a
 ld (addr), a, 23606
-ld (ix + offset ), 5
-ld a, (addr), 23606
+ld (ix + 5), a
+ld a, (23606)
 ldir
-js nz, d, -5
+jp nz, 30000
+jr nz, -5
 ret

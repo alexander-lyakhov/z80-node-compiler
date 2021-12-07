@@ -15,25 +15,44 @@ function prettify(cmd, params, data) {
     return ''
   }
 
-  const tail = params.map(el => {
+  let tail = params.map(el => {
     //-----------------------------------------------------
     // replace expression '(addr)' with address value
     //-----------------------------------------------------
     if (addrRegexp.test(el)) {
-      return el.replace(addrRegexp, data)
+      return el.replace(addrRegexp, ` ${data} `)
     }
 
     //-----------------------------------------------------
-    // replace expression like '(ix + d)' with offset value
+    // for expressions like 'ld a, (23606)'
     //-----------------------------------------------------
-    if (offsetRegexp.test(el)) {
-      return el.replace(offsetRegexp, data)
+    if (/\((\d+)\)/.test(el)) {
+      return `( ${data} )`
+    }
+
+    //-----------------------------------------------------
+    // for expressions like 'ld (ix + offset), a'
+    //-----------------------------------------------------
+    if (/\(ix\+(\d+)\)/.test(el)) {
+      return `(ix + ${data})`
+    }
+
+    //-----------------------------------------------------
+    // for expressions like 'ld (iy + offset), a'
+    //-----------------------------------------------------
+    if (/\(iy\+(\d+)\)/.test(el)) {
+      return `(iy + ${data})`
     }
 
     return el
   })
+  .join(', ')
 
-  return `${cmd} ${tail.join(', ')}`//.toUpperCase()
+  if (params.length === 1 && data) {
+    tail = tail + `, ${data}`
+  }
+
+  return `${cmd} ${tail}`//.toUpperCase()
 }
 
 function getCmdCode(path) {
@@ -52,15 +71,44 @@ const lines = context.split('\n')
 lines.forEach(line => {
   //console.log(line)
 
+  if (line.trim()[0] === '#') {
+    return
+  }
+
   const [cmd, ...rest] = line.split(/\s/)
-  const params = rest.join('').split(',').reverse()
+  const params = rest.join('').split(',')
+  const last = params[params.length - 1]
   let data = null
 
-  if (isNumber(params[0])) {
-    data = params.reverse().pop()
+  //-----------------------------------------------------------------
+  // Needed for expressions like this: 'ld a, (addr), 23606'
+  // Cut last parameter if it is a number and remove it from params
+  //-----------------------------------------------------------------
+  if (isNumber(last)) {
+    data = params.pop()
+  }
+
+  //-----------------------------------------------------------------
+  // Cut last parameter if it is a number
+  // But don't remove it from params array
+  //-----------------------------------------------------------------
+  //if (/\D*,\s*(-?\d+)\D*/.test(line)) {
+  //  data = line.replace(/\D*,\s*(-?\d+)\D*/, '$1')
+  //}
+
+  //if (/addr/.test(line) && isNumber(last)) {
+  //  params.pop()
+  //}
+
+  //-----------------------------------------------------------------
+  // Needed for expressions like 'ld (23606), a' or 'ld (ix + 5), a'
+  //-----------------------------------------------------------------
+  if (/\D*\(\D*(\d+)\s*\)\D*/.test(line)) {
+    data = line.replace(/\D*\(\D*(\d+)\s*\)\D*/, '$1')
   }
 
   //console.log(cmd, params, data)
+  //return
 
   console.log(
     printf(" %-24s | %-10s | %s",
