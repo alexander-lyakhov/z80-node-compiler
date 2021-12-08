@@ -20,8 +20,9 @@ ld a, (hl)
 ld (hl), a
 ld (addr), a, 23606
 ld (ix + 5), a
-ld a, (23606)
+ld a, (addr), 23606
 ldir
 jp nz, 30000
 jr nz, -5
+jp 40000
 ret
