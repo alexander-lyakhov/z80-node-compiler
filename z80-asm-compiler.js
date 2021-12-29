@@ -74,7 +74,8 @@ function prettify(cmd, params, data, path) {
 
 function split88(xx = 0) {
   const h = parseInt(xx / 256)
-  return [xx - h * 256, h]
+  const l = xx - h * 256
+  return [l, h]
 }
 
 function getCmdCode(path, data) {
@@ -83,33 +84,32 @@ function getCmdCode(path, data) {
 
   const initPath = [...path]
 
-     for (let node = codes; node;) {
+  for (let node = codes; node;) {
 
-       let key = path.shift()
-       //console.log('key:', key, JSON.stringify(node))
+    let key = path.shift()
 
-       if (!node[key]) {
-         throw new Error(`ERROR: --> ${key} <-- not found`)
-       }
+    if (!node[key]) {
+      throw new Error(`ERROR: --> ${key} <-- not found`)
+    }
 
-       if (Array.isArray(node[key])) {
-         const length = node[key][1]
+    if (Array.isArray(node[key])) {
+      const length = node[key][1]
 
-         if (!length) {
-           throw new Error(`ERROR: --> ${JSON.stringify(initPath)} command length is not defined`)
-         }
+      if (!length) {
+        throw new Error(`ERROR: --> ${JSON.stringify(initPath)} command length is not defined`)
+      }
 
-         return [
-           ...node[key][0], // command codes
-           ...split88(data) // low and high bites representation
-         ]
-         .splice(0, node[key][1] || 0)
-       }
+      return [
+         ...node[key][0], // command codes
+         ...split88(data) // low and high bites representation
+      ]
+      .splice(0, node[key][1] || 0)
+    }
 
-       if (typeof(node[key]) === 'object') {
-         node = node[key]
-       }
-     }
+    if (typeof(node[key]) === 'object') {
+      node = node[key]
+    }
+  }
 }
 
 const lines = context.split('\n')
