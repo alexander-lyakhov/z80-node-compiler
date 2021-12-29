@@ -18,7 +18,7 @@ ld a, l
 #ld bc, 6912
 #ld a, (hl)
 #ld (hl), a
-#ld (addr), a, 23606
+ld (addr), a, 23606
 #ld (ix + 5), a
 #ld a, (addr), 23606
 #ldir
@@ -26,3 +26,11 @@ ld a, l
 #jr nz, -5
 #jp 40000
 #ret
+
+ld (addr), a, 23606
+ld (addr), bc, 23606
+ld (addr), de, 23606
+ld (addr), hl, 23606
+ld (addr), ix, 23606
+ld (addr), iy, 23606
+ld (addr), sp, 23606
