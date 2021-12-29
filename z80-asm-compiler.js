@@ -1,14 +1,18 @@
 ﻿const fs = require('fs')
 const printf = require('printf')
+const codes  = require('./z80-asm-commands.js')
 
 const context = fs.readFileSync('ldir.asm', 'utf8')
-const codes = fs.readFileSync('z80-asm-commands.json', 'utf8')
+//const codes = fs.readFileSync('z80-asm-commands.json', 'utf8')
 
 const isNumber = (val) => !isNaN(val)
 
 const addrRegexp = /\baddr\b/
 const offsetRegexp = /(\boffset\b)|(\bd\b)/ // searching for 'offset' or 'd'
 
+//==============================================================
+// Compose prettied string and fullfild path array
+//==============================================================
 function prettify(cmd, params, data, path) {
 
   if (!cmd && !params.length) {
@@ -68,15 +72,44 @@ function prettify(cmd, params, data, path) {
   return `${cmd} ${tail}`//.toUpperCase()
 }
 
-function getCmdCode(path) {
-  while(cmd) {
-    if (typeof(cmd) !== 'object') {
-      return cmd
-    }
+function split88(xx = 0) {
+  const h = parseInt(xx / 256)
+  return [xx - h * 256, h]
+}
 
-    console.log(cmd)
-    obj = Object.values(cmd)[0]
-  }
+function getCmdCode(path, data) {
+
+  if (!path[0]) return []
+
+  const initPath = [...path]
+
+     for (let node = codes; node;) {
+
+       let key = path.shift()
+       //console.log('key:', key, JSON.stringify(node))
+
+       if (!node[key]) {
+         throw new Error(`ERROR: --> ${key} <-- not found`)
+       }
+
+       if (Array.isArray(node[key])) {
+         const length = node[key][1]
+
+         if (!length) {
+           throw new Error(`ERROR: --> ${JSON.stringify(initPath)} command length is not defined`)
+         }
+
+         return [
+           ...node[key][0], // command codes
+           ...split88(data) // low and high bites representation
+         ]
+         .splice(0, node[key][1] || 0)
+       }
+
+       if (typeof(node[key]) === 'object') {
+         node = node[key]
+       }
+     }
 }
 
 const lines = context.split('\n')
@@ -124,15 +157,23 @@ lines.forEach(line => {
   //}
 
   //console.log(cmd, params, data)
+  //prettify(cmd, params, data, path),
+  //console.log(getCmdCode([cmd, ...path]))
   //return
 
+  const pretty = prettify(cmd, params, data, path)
+
+  const str = getCmdCode([cmd, ...path], data).reduce((s, val) => s + printf("%4s ", val), '')
+
   console.log(
-    printf(" %-24s | %-10s | %-10s | %-10s | %s",
-      prettify(cmd, params, data, path),
+    printf(" %-24s | %-10s | %-10s | %-10s | %-20s | %s",
+      pretty,
       data ? data:'',
       path.join(','),
       params.join(','),
-      line
+      //getCmdCode([cmd, ...path]).join(', '),
+      str,
+      line,
     )
   )
 })
